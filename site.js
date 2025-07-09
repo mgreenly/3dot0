@@ -5,7 +5,7 @@ const CONFIG = {
   PROCESSING_DELAY: 2000,     // Spinner duration in ms
   SCROLL_DELAY: 300,          // Delay before auto-scroll
   CHAR_VARIANCE: 50,          // Random variance in typing speed (ms)
-  TRANSITION_DELAY: 1000      // Delay before showing new input
+  TRANSITION_DELAY: 500       // Delay before showing new input (0.5s)
 };
 
 // Calculate delays
@@ -70,8 +70,66 @@ const SLIDES = [
         type: 'response',
         content: `🔇 All notifications paused.`,
         delay: WORD_DELAY
+      },
+      {
+        type: 'transition',
+        delay: CONFIG.TRANSITION_DELAY
       }
-      // No transition - presentation ends here
+    ]
+  },
+  {
+    id: 'slide-3',
+    actions: [
+      // Note: Input already created by previous slide's transition
+      {
+        type: 'dictate',
+        target: '.slide-input:not(.faded) .chat-input',
+        text: 'create a new golang app in the projects folder called echo. It should have a landing page indicating its name and version and an endpoint at echo/ endpoint that replies to posts with the same content posted to it.',
+        delay: DICTATION_DELAY
+      },
+      {
+        type: 'fade-current-input'
+      },
+      {
+        type: 'spinner',
+        duration: CONFIG.PROCESSING_DELAY
+      },
+      {
+        type: 'response',
+        content: `Creating Go application structure...<phase-break><br>📁 projects/echo/<br>├── main.go<br>├── go.mod<br>└── README.md<br><br><phase-break>Writing: main.go<phase-break><pre><code class="language-go"><span class="keyword">package</span> <span class="type">main</span>
+
+<span class="keyword">import</span> <span class="punctuation">(</span>
+    <span class="string">"fmt"</span>
+    <span class="string">"io"</span>
+    <span class="string">"net/http"</span>
+<span class="punctuation">)</span>
+
+<span class="keyword">const</span> <span class="type">version</span> <span class="operator">=</span> <span class="string">"1.0.0"</span>
+
+<span class="keyword">func</span> <span class="function">main</span><span class="punctuation">()</span> <span class="punctuation">{</span>
+    <span class="type">http</span><span class="punctuation">.</span><span class="function">HandleFunc</span><span class="punctuation">(</span><span class="string">"/"</span><span class="punctuation">,</span> <span class="function">homeHandler</span><span class="punctuation">)</span>
+    <span class="type">http</span><span class="punctuation">.</span><span class="function">HandleFunc</span><span class="punctuation">(</span><span class="string">"/echo/"</span><span class="punctuation">,</span> <span class="function">echoHandler</span><span class="punctuation">)</span>
+    
+    <span class="type">fmt</span><span class="punctuation">.</span><span class="function">Println</span><span class="punctuation">(</span><span class="string">"Echo server starting on :8080..."</span><span class="punctuation">)</span>
+    <span class="type">http</span><span class="punctuation">.</span><span class="function">ListenAndServe</span><span class="punctuation">(</span><span class="string">":8080"</span><span class="punctuation">,</span> <span class="keyword">nil</span><span class="punctuation">)</span>
+<span class="punctuation">}</span>
+
+<span class="keyword">func</span> <span class="function">homeHandler</span><span class="punctuation">(</span><span class="type">w</span> <span class="type">http.ResponseWriter</span><span class="punctuation">,</span> <span class="type">r</span> <span class="operator">*</span><span class="type">http.Request</span><span class="punctuation">)</span> <span class="punctuation">{</span>
+    <span class="type">fmt</span><span class="punctuation">.</span><span class="function">Fprintf</span><span class="punctuation">(</span><span class="type">w</span><span class="punctuation">,</span> <span class="string">"Echo Server v%s"</span><span class="punctuation">,</span> <span class="type">version</span><span class="punctuation">)</span>
+<span class="punctuation">}</span>
+
+<span class="keyword">func</span> <span class="function">echoHandler</span><span class="punctuation">(</span><span class="type">w</span> <span class="type">http.ResponseWriter</span><span class="punctuation">,</span> <span class="type">r</span> <span class="operator">*</span><span class="type">http.Request</span><span class="punctuation">)</span> <span class="punctuation">{</span>
+    <span class="keyword">if</span> <span class="type">r</span><span class="punctuation">.</span><span class="type">Method</span> <span class="operator">==</span> <span class="string">"POST"</span> <span class="punctuation">{</span>
+        <span class="type">body</span><span class="punctuation">,</span> <span class="type">_</span> <span class="operator">:=</span> <span class="type">io</span><span class="punctuation">.</span><span class="function">ReadAll</span><span class="punctuation">(</span><span class="type">r</span><span class="punctuation">.</span><span class="type">Body</span><span class="punctuation">)</span>
+        <span class="type">w</span><span class="punctuation">.</span><span class="function">Write</span><span class="punctuation">(</span><span class="type">body</span><span class="punctuation">)</span>
+    <span class="punctuation">}</span>
+<span class="punctuation">}</span></code></pre><br><phase-break>Initializing Go module...<phase-break><pre><code class="language-bash">go mod init projects/echo</code></pre><br><phase-break>✅ Application created successfully! Run with:<phase-break><pre><code class="language-bash">$ cd projects/echo && go run main.go</code></pre>`,
+        delay: WORD_DELAY
+      },
+      {
+        type: 'transition',
+        delay: CONFIG.TRANSITION_DELAY
+      }
     ]
   }
 ];
@@ -81,9 +139,73 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+function autoResizeTextarea(textarea) {
+  textarea.style.height = 'auto';
+  textarea.style.height = Math.min(textarea.scrollHeight, 150) + 'px'; // Max height of 150px
+}
+
 async function animateWords(element, content, delayPerWord) {
-  // Check if content contains HTML
-  if (content.includes('<img')) {
+  // Check if content contains phase breaks
+  if (content.includes('<phase-break>')) {
+    const phases = content.split('<phase-break>');
+    
+    for (const phase of phases) {
+      if (phase.trim()) {
+        await animateWords(element, phase, delayPerWord);
+        
+        // Show spinner after each phase except the last
+        if (phases.indexOf(phase) < phases.length - 1) {
+          const spinnerContainer = document.createElement('div');
+          spinnerContainer.className = 'phase-spinner';
+          spinnerContainer.innerHTML = '<span class="spinner"></span>';
+          element.appendChild(spinnerContainer);
+          
+          await sleep(2000); // 2 second spinner
+          spinnerContainer.remove();
+        }
+      }
+    }
+    return;
+  }
+  
+  // Check if content contains code blocks
+  if (content.includes('<pre>')) {
+    // Split content by code blocks
+    const parts = content.split(/(<pre>[\s\S]*?<\/pre>)/);
+    
+    for (const part of parts) {
+      if (part.startsWith('<pre>')) {
+        // Insert code block immediately
+        const codeBlock = document.createElement('div');
+        codeBlock.innerHTML = part;
+        element.appendChild(codeBlock.firstChild);
+      } else if (part.trim()) {
+        // Animate regular text
+        const textSpan = document.createElement('span');
+        textSpan.classList.add('typing-cursor');
+        element.appendChild(textSpan);
+        
+        // Split by words but preserve HTML tags like <br>
+        const tokens = part.trim().split(/(\s+|<br>|<br\/>|<br\s\/>)/);
+        for (let i = 0; i < tokens.length; i++) {
+          const token = tokens[i];
+          if (token.match(/^<br/)) {
+            textSpan.innerHTML += token;
+          } else if (token.match(/^\s+$/)) {
+            // Preserve spaces between words
+            textSpan.innerHTML += ' ';
+          } else if (token.trim()) {
+            textSpan.innerHTML += token;
+            scrollToElement(element);
+            const variance = Math.random() * CONFIG.CHAR_VARIANCE - CONFIG.CHAR_VARIANCE / 2;
+            await sleep(delayPerWord + variance);
+          }
+        }
+        
+        textSpan.classList.remove('typing-cursor');
+      }
+    }
+  } else if (content.includes('<img')) {
     // Extract image tag and text
     const imgMatch = content.match(/<img[^>]*>/);
     const imgTag = imgMatch ? imgMatch[0] : '';
@@ -132,36 +254,49 @@ async function animateWords(element, content, delayPerWord) {
       textSpan.classList.add('typing-cursor');
       element.appendChild(textSpan);
       
-      // Animate remaining text
-      const words = textContent.split(' ');
-      for (let i = 0; i < words.length; i++) {
-        const word = words[i];
-        textSpan.textContent += (i > 0 ? ' ' : '') + word;
-        scrollToElement(element);
-        const variance = Math.random() * CONFIG.CHAR_VARIANCE - CONFIG.CHAR_VARIANCE / 2;
-        await sleep(delayPerWord + variance);
+      // Animate remaining text with HTML support
+      const tokens = textContent.trim().split(/(\s+|<br>|<br\/>|<br\s\/>)/);
+      for (let i = 0; i < tokens.length; i++) {
+        const token = tokens[i];
+        if (token.match(/^<br/)) {
+          textSpan.innerHTML += token;
+        } else if (token.match(/^\s+$/)) {
+          // Preserve spaces between words
+          textSpan.innerHTML += ' ';
+        } else if (token.trim()) {
+          textSpan.innerHTML += token;
+          scrollToElement(element);
+          const variance = Math.random() * CONFIG.CHAR_VARIANCE - CONFIG.CHAR_VARIANCE / 2;
+          await sleep(delayPerWord + variance);
+        }
       }
       
       textSpan.classList.remove('typing-cursor');
     } else {
       // Original text-only animation
-      const words = content.split(' ');
-      element.textContent = '';
-      element.classList.add('typing-cursor');
+      // Create a new span for this text animation
+      const textSpan = document.createElement('span');
+      textSpan.classList.add('typing-cursor');
+      element.appendChild(textSpan);
       
-      for (let i = 0; i < words.length; i++) {
-        const word = words[i];
-        element.textContent += (i > 0 ? ' ' : '') + word;
-        
-        // Scroll to keep typing cursor visible
-        scrollToElement(element);
-        
-        // Add natural variance to typing speed
-        const variance = Math.random() * CONFIG.CHAR_VARIANCE - CONFIG.CHAR_VARIANCE / 2;
-        await sleep(delayPerWord + variance);
+      // Split by words but preserve HTML tags like <br>
+      const tokens = content.trim().split(/(\s+|<br>|<br\/>|<br\s\/>)/);
+      for (let i = 0; i < tokens.length; i++) {
+        const token = tokens[i];
+        if (token.match(/^<br/)) {
+          textSpan.innerHTML += token;
+        } else if (token.match(/^\s+$/)) {
+          // Preserve spaces between words
+          textSpan.innerHTML += ' ';
+        } else if (token.trim()) {
+          textSpan.innerHTML += token;
+          scrollToElement(element);
+          const variance = Math.random() * CONFIG.CHAR_VARIANCE - CONFIG.CHAR_VARIANCE / 2;
+          await sleep(delayPerWord + variance);
+        }
       }
       
-      element.classList.remove('typing-cursor');
+      textSpan.classList.remove('typing-cursor');
     }
   }
 }
@@ -212,7 +347,7 @@ function renderInitialInput() {
   const inputDiv = document.createElement('div');
   inputDiv.className = 'input-wrapper slide-input fade-in';
   inputDiv.innerHTML = `
-    <input type="text" class="chat-input" placeholder="How can I help you today?" readonly>
+    <textarea class="chat-input" placeholder="How can I help you today?" readonly rows="1"></textarea>
     <button class="mic-button" aria-label="Toggle microphone">
       <svg class="mic-icon" viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
         <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
@@ -286,6 +421,7 @@ class SlideManager {
     
     for (let i = 0; i < words.length; i++) {
       input.value += (i > 0 ? ' ' : '') + words[i];
+      autoResizeTextarea(input); // Auto-resize as we type
       const variance = Math.random() * CONFIG.CHAR_VARIANCE - CONFIG.CHAR_VARIANCE / 2;
       await sleep(action.delay + variance);
     }
@@ -328,15 +464,24 @@ class SlideManager {
     const container = document.getElementById('slides-container');
     const inputDiv = document.createElement('div');
     inputDiv.className = 'input-wrapper slide-input fade-in';
+    
+    // Check if this is the final input (after slide 3)
+    const isFinal = this.currentIndex >= this.slides.length - 1;
+    
     inputDiv.innerHTML = `
-      <input type="text" class="chat-input" placeholder="${action.placeholder}" readonly>
-      <button class="mic-button" aria-label="Toggle microphone">
+      <textarea class="chat-input" placeholder="${action.placeholder || 'How can I help you today?'}" readonly rows="1"></textarea>
+      <button class="mic-button${isFinal ? ' disabled' : ''}" aria-label="Toggle microphone" ${isFinal ? 'disabled' : ''}>
         <svg class="mic-icon" viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
           <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
           <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
         </svg>
       </button>
     `;
+    
+    if (isFinal) {
+      inputDiv.classList.add('final');
+    }
+    
     container.appendChild(inputDiv);
     scrollToLatest();
   }
@@ -367,7 +512,8 @@ function initializeApp() {
   
   // Microphone click - delegate to handle dynamic inputs
   document.addEventListener('click', (e) => {
-    if (e.target.closest('.mic-button') && !state.isProcessing) {
+    const micButton = e.target.closest('.mic-button');
+    if (micButton && !micButton.disabled && !state.isProcessing) {
       slideManager.advance();
     }
   });

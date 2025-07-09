@@ -78,15 +78,19 @@ body {
 
 .chat-input {
   width: 100%;
-  height: 56px;
+  min-height: 56px;
   padding: 1rem 3.5rem 1rem 1.5rem;
   font-size: 1rem;
+  font-family: inherit;
   border: 1px solid var(--claude-border);
   border-radius: 28px;
   background: var(--claude-white);
   color: var(--claude-text);
-  transition: border-color 0.2s ease;
+  transition: border-color 0.2s ease, height 0.2s ease;
   outline: none;
+  resize: none;
+  overflow-y: auto;
+  line-height: 1.5;
 }
 
 .chat-input::placeholder {
@@ -287,15 +291,19 @@ body {
 
 .slide-input .chat-input {
   width: 100%;
-  height: 56px;
+  min-height: 56px;
   padding: 1rem 3.5rem 1rem 1.5rem;
   font-size: 1rem;
+  font-family: inherit;
   border: 1px solid var(--claude-border);
   border-radius: 28px;
   background: var(--claude-white);
   color: var(--claude-text);
   transition: all 0.3s ease;
   outline: none;
+  resize: none;
+  overflow-y: auto;
+  line-height: 1.5;
 }
 
 .slide-input .mic-button {
@@ -334,6 +342,18 @@ body {
   pointer-events: none;
 }
 
+/* Final input (non-functional) */
+.slide-input.final .mic-button,
+.mic-button.disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.slide-input.final .chat-input {
+  cursor: not-allowed;
+}
+
 @media (max-width: 768px) {
   .fixed-header {
     padding: 1.5rem;
@@ -364,4 +384,124 @@ body {
   .slide-entry {
     padding: 1rem;
   }
+}
+
+/* Code block styles */
+pre {
+  background: #1e1e1e;
+  color: #d4d4d4;
+  padding: 1rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 1rem 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+code {
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 0.9rem;
+}
+
+pre code {
+  background: none;
+  padding: 0;
+  border-radius: 0;
+  color: #d4d4d4;
+}
+
+/* Inline code */
+:not(pre) > code {
+  background: var(--claude-bg);
+  padding: 0.2em 0.4em;
+  border-radius: 3px;
+  font-size: 0.875rem;
+  color: var(--claude-text);
+}
+
+/* Language label */
+code[class*="language-"]::before {
+  content: attr(class);
+  display: block;
+  font-size: 0.75rem;
+  color: #858585;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+}
+
+code.language-go::before {
+  content: "GO";
+}
+
+code.language-bash::before {
+  content: "BASH";
+}
+
+/* Syntax highlighting for Go */
+.language-go .keyword {
+  color: #C586C0; /* Purple for keywords */
+}
+
+.language-go .string {
+  color: #CE9178; /* Orange for strings */
+}
+
+.language-go .function {
+  color: #DCDCAA; /* Yellow for functions */
+}
+
+.language-go .type {
+  color: #4EC9B0; /* Teal for types */
+}
+
+.language-go .comment {
+  color: #6A9955; /* Green for comments */
+  font-style: italic;
+}
+
+.language-go .number {
+  color: #B5CEA8; /* Light green for numbers */
+}
+
+.language-go .operator {
+  color: #D4D4D4; /* Light gray for operators */
+}
+
+.language-go .punctuation {
+  color: #D4D4D4; /* Light gray for punctuation */
+}
+
+
+/* Inline spinner for progress messages */
+.inline-spinner {
+  display: inline-block;
+  margin-left: 0.5rem;
+  vertical-align: middle;
+}
+
+.inline-spinner .spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--claude-border);
+  border-top-color: var(--claude-orange);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+/* Phase spinner - displayed between phases */
+.phase-spinner {
+  display: flex;
+  justify-content: center;
+  padding: 1rem 0;
+}
+
+.phase-spinner .spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--claude-border);
+  border-top-color: var(--claude-orange);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
 }
